@@ -1,0 +1,30 @@
+{
+  "name": "devtinder",
+  "version": "1.0.0",
+  "description": "tinder for devs",
+  "keywords": [
+    "node",
+    "js",
+    "java",
+    "script"
+  ],
+  "homepage": "https://github.com/Himanshigarg11/DevTinder#readme",
+  "bugs": {
+    "url": "https://github.com/Himanshigarg11/DevTinder/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Himanshigarg11/DevTinder.git"
+  },
+  "license": "ISC",
+  "author": "Himanshi",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start":"node src/app/js",
+    "dev":"nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
