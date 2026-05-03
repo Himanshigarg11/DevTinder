@@ -28,7 +28,6 @@ const userSchema=new mongoose.Schema({
     },
     phoneNumber:{
         type:String,
-        required:true,
         validate(value){
             if(!validator.isMobilePhone(value,"en-IN")){
                 throw new Error("phone number is not valid")

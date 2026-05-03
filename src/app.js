@@ -2,96 +2,100 @@ const express=require("express");
 const {connectDB}=require("./config/database")
 const app=express();
 const {User}=require("./models/user")
-
+const {validateSignUpData}=require("./utils/validation")
+const bcrypt=require("bcrypt")
+const jwt=require("jsonwebtoken")
+const cookieParser=require("cookie-parser")
+const {userAuth}=require("./middelware/auth")
+app.use(cookieParser())
 app.use(express.json())
 
 // post /signup add user
 app.post("/signup", async (req,res)=>{
- const user=new User(req.body)
- try{
+     try{
+    //validation of data 
+     validateSignUpData(req);
+    //encrption of data 
+    const {password,firstName,lastName,emailID,age,gender,phoneNumber}=req.body
+    const passwordHash=await bcrypt.hash(password,10)
+    console.log(passwordHash)
+    // creating instance of data 
+     const user=new User({
+        firstName,
+        lastName,
+        emailID,
+        age,
+        gender,
+        phoneNumber,
+        password:passwordHash,   
+     })
+
     await user.save();
     res.send("user added successfully")
  }
  catch(err){
-   res.status(400).send("Something went wrong:"+err.message)
+   res.status(400).send("ERROR: "+err.message)
  }
 
 })
 
-// get /usr findOne by email
-app.get("/user", async(req,res)=>{
-    const userEmail=req.body.emailId
+// post /login 
+app.post("/login", async(req,res)=>{
     try{
-        const user=await User.findOne({emailId: userEmail})
-        if(!user){
-            res.status(400).send("NO USER FOUND")
-         }
-        else{
-            res.send(user)
-        }
+      const {emailID,password}=req.body;
+      const user=await User.findOne({emailID:emailID});
+      if(!user){
+        throw new Error("Invalid credentials")
+      }
+    const isPassword=await bcrypt.compare(password,user.password)
+      if(isPassword){
+        //create jwt token 
+        const token=await jwt.sign(
+            {userId:user._id},
+            "devTinder@123$123",
+            {expiresIn:"7d"})
+
+        res.cookie("token",token, {
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+        })
+        // add with cookie send to user
+        res.send("login successfully!!")
+      }
+      else{
+         throw new Error("Invalid credentials")
+      } 
     }
     catch(err){
-        res.status(400).send("can't find this user"+err.message)
+        res.status(400).send("Error: "+err.message)
     }
-
 })
 
-// get /feed  get all user from DB
-
-app.get("/feed", async (req,res)=>{
-   try{
-     const user=await User.find({})
-     if(user.length===0) res.status(400).send("NO USER FOUND")
-     else{res.send(user)}
-   }
-   catch(err){
-    res.status(400).send("something went wrong:"+err.message)
-   }
-    
-})
-
-// delete /user by id 
-app.delete("/user", async (req,res)=>{
-    const userId=req.body.userId;
-    
+// get /profile api
+app.get("/profile",userAuth,async (req,res)=>{
     try{
-        const user = await User.findByIdAndDelete(userId);
-        if(!user){
-              res.status(400).send("NO USER FOUND WITH THIS EMAIL")
-        }
-        else{
-            res.send("user Deleted")
-        }
+      const user=req.user
+      res.send(user)
     }
     catch(err){
-        res.status(400).send("Something went wrong"+err.message)
+        res.status(400).send("ERROR: "+err.message)
     }
 })
 
-app.patch("/user/:userId",async (req,res)=>{
-   const userId=req.params?.userId;
-   const data=req.body
-   try{
-   const ALLOWED_UPDATES=[
-    "photoURL","about","skills","age"
-   ]
-   const isUpdateAllowed=Object.keys(data).every((k)=>
-    ALLOWED_UPDATES.includes(k)
-    );
-    if(!isUpdateAllowed){
-        throw new Error("update not allowed")
-    }
-   
-      const user = await User.findByIdAndUpdate({_id:userId},data,{
-        returnDocument:"before",
-        runValidators:true
-    });
-            res.send("user updated")
+
+// post api /sendConnectionRequest
+
+app.post("/sendConnectionRequest",userAuth,async (req,res)=>{
+    try{
+      console.log("sending a connection request")
+      res.send("connection request send")
     }
     catch(err){
-        res.status(400).send("Something went wrong: "+err.message)
+        res.status(400).send("Error: "+err.message)
     }
 })
+
+
 
 connectDB()
 .then(()=>{
