@@ -5,7 +5,8 @@ require("dotenv").config();
 const cookieParser=require("cookie-parser")
 const cors=require("cors")
 app.use(cors({
-    origin:"https://dev-connect-frontend-brown.vercel.app",
+    origin:["http://localhost:5173",
+    "https://dev-connect-frontend-brown.vercel.app"],
     credentials: true,
 }))
 app.use(cookieParser())
